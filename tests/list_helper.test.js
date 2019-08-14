@@ -130,3 +130,34 @@ describe('mostBlogs', () => {
     });
   });
 });
+
+
+describe('countAuthorsLikes', () => {
+  test('given a list with one blog, returns the amount of blogs from each author', () => {
+    const result = listHelper.countAuthorsLikes(listWithOneBlog);
+    expect(result).toEqual({
+      'thykka': 3
+    });
+  });
+
+  test('given a list of blogs, returns the amount of blogs from each author', () => {
+    const result = listHelper.countAuthorsLikes(listWithManyBlogs);
+    expect(result).toEqual({
+      'Edsger W. Dijkstra': 17,
+      'Michael Chan': 7,
+      'Robert C. Martin': 12,
+      'thykka': 3,
+    });
+  });
+});
+
+
+describe('mostLikes', () => {
+  test('given a list of blogs, returns the author with most blogs', () => {
+    const result = listHelper.mostLikes(listWithManyBlogs);
+    expect(result).toEqual({
+      author: 'Edsger W. Dijkstra',
+      likes: 17
+    });
+  });
+});

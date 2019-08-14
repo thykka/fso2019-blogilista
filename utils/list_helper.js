@@ -21,8 +21,8 @@ const countAuthorsBlogs = (blogs = []) => {
   }, {});
 };
 
-const mostBlogs = (blog = []) => {
-  const authorBlogCounts = countAuthorsBlogs(blog);
+const mostBlogs = (blogs = []) => {
+  const authorBlogCounts = countAuthorsBlogs(blogs);
   const [author, blogCount] = Object.entries(authorBlogCounts).sort(
     ([_, countA], [__, countB]) => countB - countA
   )[0];
@@ -31,10 +31,33 @@ const mostBlogs = (blog = []) => {
   };
 };
 
+const countAuthorsLikes = (blogs = []) => {
+  return blogs.reduce((totals, { author, likes }) => {
+    if(typeof totals[author] === 'undefined') {
+      totals[author] = likes;
+    } else {
+      totals[author] += likes;
+    }
+    return totals;
+  }, {});
+};
+
+const mostLikes = (blogs = []) => {
+  const autherLikesCounts = countAuthorsLikes(blogs);
+  const [author, likes] = Object.entries(autherLikesCounts).sort(
+    ([_, likesA], [__, likesB]) => likesB - likesA
+  )[0];
+  return {
+    author, likes
+  };
+};
+
 module.exports = {
   dummy,
   totalLikes,
   favoriteBlog,
   countAuthorsBlogs,
-  mostBlogs
+  mostBlogs,
+  countAuthorsLikes,
+  mostLikes
 };
