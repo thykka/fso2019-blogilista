@@ -41,6 +41,13 @@
                 "before": true,
                 "after": true
             }
+        ],
+        "no-unused-vars": [
+            "warn",
+            {
+                "args": "all",
+                "argsIgnorePattern": "^_+$"
+            }
         ]
     }
 }
