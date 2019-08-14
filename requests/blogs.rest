@@ -1,0 +1,19 @@
+@apiUrl = http://localhost:3003/api
+
+###
+
+# @name getBlogs
+GET {{apiUrl}}/blogs
+
+###
+
+# @name postBlog
+POST {{apiUrl}}/blogs
+Content-Type: application/json
+
+{
+  "title": "Test blog",
+  "author": "thykka",
+  "url": "http://example.com",
+  "likes": 0
+}
