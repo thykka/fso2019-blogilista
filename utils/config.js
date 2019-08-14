@@ -1,11 +1,11 @@
-const EnvInterface = require('../interfaces/env');
-const env = new EnvInterface();
+require('dotenv').config();
+
+const PORT = process.env.PORT;
+const MONGODB_URI = (process.env.NODE_ENV === 'test')
+  ? process.env.TEST_MONGODB_URI
+  : process.env.MONGODB_URI;
 
 module.exports = {
-  PORT: 3003,
-  MONGODB_URI: `mongodb+srv://${
-    env.user
-  }:${
-    env.pass
-  }@thykka-fso2k19-cswvc.mongodb.net/blogs?retryWrites=true&w=majority`
+  PORT,
+  MONGODB_URI
 };

@@ -1,4 +1,4 @@
-@apiUrl = http://localhost:3003/api
+@apiUrl = http://localhost:3001/api
 
 ###
 
