@@ -1,0 +1,11 @@
+{
+  "name": "fso2k19-bloglist",
+  "version": "0.0.1",
+  "description": "FullStack Open 2019 - Bloglist",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Moses Holmström",
+  "license": "MIT"
+}
