@@ -43,8 +43,8 @@ const countAuthorsLikes = (blogs = []) => {
 };
 
 const mostLikes = (blogs = []) => {
-  const autherLikesCounts = countAuthorsLikes(blogs);
-  const [author, likes] = Object.entries(autherLikesCounts).sort(
+  const authorLikesCounts = countAuthorsLikes(blogs);
+  const [author, likes] = Object.entries(authorLikesCounts).sort(
     ([_, likesA], [__, likesB]) => likesB - likesA
   )[0];
   return {
