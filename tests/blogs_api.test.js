@@ -32,7 +32,7 @@ beforeEach(async () => {
 });
 
 describe('GET /api/blogs', () => {
-  test('blogs are returned as json', async () => {
+  test('blogs are returned as JSON', async () => {
     await api.get('/api/blogs')
       .expect(200)
       .expect('Content-Type', /application\/json/);
@@ -57,6 +57,56 @@ describe('GET /api/blogs', () => {
     expect(blog).toHaveProperty('title');
     expect(blog).toHaveProperty('url');
   });
+});
+
+describe('POST /api/blogs', () => {
+  test('response is in JSON', async () => {
+    const result = await api.post('/api/blogs')
+      .send({
+        title: 'Hype wars',
+        author: 'Gobert M. Cartin\'',
+        url: 'http://example.com',
+        likes: 9
+      })
+      .set('Accept', 'application/json');
+
+    expect(result.status).toBe(201);
+    expect(result.headers).toHaveProperty('content-type');
+    expect(result.headers['content-type']).toMatch(/^application\/json/);
+  });
+
+  test('new blog increases the amount of blogs in the list', async () => {
+    await api.post('/api/blogs')
+      .send({
+        title: 'Just another blog',
+        author: 'Just another blogger',
+        url: 'http://justanotherurl.com',
+        likes: 0
+      })
+      .set('Accept', 'application/json');
+
+    const result = await api.get('/api/blogs');
+    expect(result.body.length).toBe(initialBlogs.length + 1);
+  });
+
+  test('the response matches the new blog object', async () => {
+    const sentBlog = {
+      title: 'A match made in heaven',
+      author: 'Rex Egg',
+      url: 'https://regexr.com',
+      likes: 9001
+    };
+    const result = await api.post('/api/blogs')
+      .send(sentBlog)
+      .set('Accept', 'application/json');
+
+    const receivedBlog = result.body;
+    expect(receivedBlog.title).toBe(sentBlog.title);
+    expect(receivedBlog.author).toBe(sentBlog.author);
+    expect(receivedBlog.url).toBe(sentBlog.url);
+    expect(receivedBlog.likes).toBe(sentBlog.likes);
+  });
+
 });
 
 
