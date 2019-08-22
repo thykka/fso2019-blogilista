@@ -107,6 +107,18 @@ describe('POST /api/blogs', () => {
     expect(receivedBlog.likes).toBe(sentBlog.likes);
   });
 
+  test('if the new blog doesn\'t define likes, the initial likes should be 0', async() => {
+    const result = await api.post('/api/blogs')
+      .send({
+        title: 'I was made for liking you, baby',
+        author: 'NaN Jon Bovi',
+        url: 'http://example.com'
+      })
+      .set('Accept', 'application/json');
+
+    expect(result.body.likes).toBe(0);
+  });
+
 });
 
 
