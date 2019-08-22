@@ -48,9 +48,14 @@ describe('GET /api/blogs', () => {
     expect(res.body[0].url).toBe('http://example.com');
   });
 
-  test('the returned blog object has a key; id', async() => {
+  test('the returned blog object to have at least certain properties', async() => {
     const res = await api.get('/api/blogs');
-    expect(res.body[0]).toHaveProperty('id');
+    const blog = res.body[0];
+    expect(blog).toHaveProperty('author');
+    expect(blog).toHaveProperty('id');
+    expect(blog).toHaveProperty('likes');
+    expect(blog).toHaveProperty('title');
+    expect(blog).toHaveProperty('url');
   });
 });
 
