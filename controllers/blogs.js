@@ -8,6 +8,12 @@ blogsRouter.get('/', async (_, response) => {
 });
 
 blogsRouter.post('/', async (request, response) => {
+  const { title, url } = request.body;
+  if(!title || !url) {
+    return response.status(400).json({
+      error: 'Must have \'title\' and \'url\''
+    });
+  }
   const blog = new Blog(request.body);
   const savedBlog = await blog.save();
   response.status(201).json(savedBlog);

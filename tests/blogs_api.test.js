@@ -119,7 +119,7 @@ describe('POST /api/blogs', () => {
     expect(result.body.likes).toBe(0);
   });
 
-  test('if the new blog doesn\'t define a title and url, the response is 400', async () => {
+  test('if no title or url defined, the response status is 400', async () => {
     const result = await api.post('/api/blogs')
       .send({
         author: 'Under construction',
