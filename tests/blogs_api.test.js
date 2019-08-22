@@ -20,9 +20,23 @@ const initialBlogs = [
   }
 ];
 
+const nonExistingId = async () => {
+  const blog = new Blog({
+    title: 'temporary entry',
+    url: 'https://example.com'
+  });
+  await blog.save();
+  await blog.remove();
+  return blog._id.toString();
+};
+
+const blogsInDb = async () => {
+  const blogs = await Blog.find({});
+  return blogs.map(blog => blog.toJSON());
+};
+
 beforeEach(async () => {
   await Blog.deleteMany({});
-
 
   let blogObject = new Blog(initialBlogs[0]);
   await blogObject.save();
@@ -38,9 +52,9 @@ describe('GET /api/blogs', () => {
       .expect('Content-Type', /application\/json/);
   });
 
-  test('there are 2 blogs', async () => {
+  test('all blogs are returned', async () => {
     const res = await api.get('/api/blogs');
-    expect(res.body.length).toBe(2);
+    expect(res.body.length).toBe(initialBlogs.length);
   });
 
   test('the first blog links to example.com', async () => {
@@ -131,5 +145,68 @@ describe('POST /api/blogs', () => {
   });
 });
 
+describe('DELETE /api/posts/:id', () => {
+  test('response status is 204', async () => {
+    const listResponse = await api.get('/api/blogs');
+    const { id } = listResponse.body[0];
+    const result = await api.delete('/api/blogs/' + id);
+
+    expect(result.status).toBe(204);
+  });
+
+  test('deleting should decrease the blogs length by 1', async () => {
+    const listResponse = await api.get('/api/blogs');
+    const { id } = listResponse.body[0];
+    const blogsLength = listResponse.body.length;
+
+    await api.delete('/api/blogs/' + id);
+
+    const result = await api.get('/api/blogs');
+
+    expect(result.body.length).toBe(blogsLength - 1);
+  });
+
+  test('if invalid id is provided, response status is 400', async () => {
+    const result = await api.delete('/api/blogs/foobar');
+    expect(result.status).toBe(400);
+  });
+
+  test('if expired id is provided, response status is 404', async () => {
+    const id = await nonExistingId();
+    const result = await api.delete('/api/blogs/' + id);
+    expect(result.status).toBe(404);
+  });
+});
+
+
+describe('PUT /api/posts/:id', () => {
+  test('response status is 204', async () => {
+    const blogs = await blogsInDb();
+    const id = blogs[0].id;
+    const result = await api.put('/api/blogs/' + id);
+    expect(result.status).toBe(200);
+  });
+
+  test('can change amount of likes', async () => {
+    const blogs = await blogsInDb();
+    const id = blogs[0].id;
+    const result = await api.put('/api/blogs/' + id)
+      .send({
+        likes: 100
+      });
+    expect(result.body.likes).toBe(100);
+  });
+
+  test('if invalid id is provided, response status is 400', async () => {
+    const result = await api.put('/api/blogs/foobar');
+    expect(result.status).toBe(400);
+  });
+
+  test('if expired id is provided, response status is 404', async () => {
+    const id = await nonExistingId();
+    const result = await api.put('/api/blogs/' + id);
+    expect(result.status).toBe(404);
+  });
+});
 
 afterAll(() => mongoose.connection.close());
