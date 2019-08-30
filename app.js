@@ -21,7 +21,7 @@ app.use(bodyParser.json());
 app.use('/api/blogs', blogsRouter);
 app.use('/api/users', usersRouter);
 
-const errorHandler = (error, req, res, next) => {
+const errorHandler = (error, _, res, next) => {
   if(error.name === 'ValidationError') {
     return res.status(400).json({ error: error.message });
   } else if(error.name === 'CastError' && error.kind === 'ObjectId') {
