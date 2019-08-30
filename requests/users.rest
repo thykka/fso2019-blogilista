@@ -1,0 +1,21 @@
+@apiUrl = http://localhost:3001/api
+
+###
+
+# @name getUsers
+GET {{apiUrl}}/users
+
+###
+
+# @name postUser
+POST {{apiUrl}}/users
+Content-Type: application/json
+
+{
+  "name": "Anne Newmoss",
+  "username": "anew",
+  "password": "supersecret"
+}
+
+
+
