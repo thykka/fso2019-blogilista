@@ -8,21 +8,34 @@ usersRouter.get('/', async (_, res) => {
 });
 
 usersRouter.post('/', async (req, res, next) => {
-  try {
-    const { body } = req;
-    const passwordHash = await bcrypt.hash(body.password, 10);
+  let errors = [];
+  const { password, username, name } = req.body;
+  if(!password || !username || !name) {
+    errors.push('Must have \'password\', \'username\' and \'name\'');
+  }
+  if(username.length < 3) {
+    errors.push('Username must be at least 3 characters long');
+  }
+  if(password.length < 8) {
+    errors.push('Password must be at least 8 characters long');
+  }
 
+  if(errors.length > 0) {
+    return res.status(400).json({ errors });
+  }
+
+  try {
+    const passwordHash = await bcrypt.hash(password, 10);
     const user = new User({
-      username: body.username,
-      name: body.name,
+      username: username,
+      name: name,
       passwordHash
     });
 
     const savedUser = await user.save();
-
     res.status(201).json(savedUser);
+
   } catch(e) {
-    console.log(e);
     next(e);
   }
 });
