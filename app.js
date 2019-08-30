@@ -4,6 +4,15 @@ const bodyParser = require('body-parser');
 const blogsRouter = require('./controllers/blogs');
 const usersRouter = require('./controllers/users');
 
+const config = require('./utils/config');
+
+const mongoose = require('mongoose');
+
+mongoose.connect(config.MONGODB_URI, {
+  useNewUrlParser: true,
+  useFindAndModify: false
+});
+
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());

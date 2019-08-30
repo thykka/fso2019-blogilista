@@ -1,10 +1,4 @@
-const config = require('../utils/config');
-
 const mongoose = require('mongoose');
-mongoose.connect(config.MONGODB_URI, {
-  useNewUrlParser: true,
-  useFindAndModify: false
-});
 
 const blogSchema = mongoose.Schema({
   title: String,
