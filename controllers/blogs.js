@@ -1,30 +1,36 @@
 const blogsRouter = require('express').Router();
 const Blog = require('../models/blog');
-
-blogsRouter.delete('/:id', async (request, response) => {
-  try {
-    const result = await Blog.findByIdAndRemove(request.params.id);
-    response.status(result ? 204 : 404).end();
-  } catch(e) {
-    response.status(400).end();
-  }
-});
+const User = require('../models/user');
 
 blogsRouter.get('/', async (_, response) => {
-  const blogs = await Blog.find({});
+  const blogs = await Blog.find({}).populate('user');
   response.json(blogs.map(blog => blog.toJSON()));
 });
 
-blogsRouter.post('/', async (request, response) => {
-  const { title, url } = request.body;
+blogsRouter.post('/', async (request, response, next) => {
+  const { title, url, author, userId, likes } = request.body;
   if(!title || !url) {
     return response.status(400).json({
       error: 'Must have \'title\' and \'url\''
     });
   }
-  const blog = new Blog(request.body);
-  const savedBlog = await blog.save();
-  response.status(201).json(savedBlog);
+  const user = await User.findById(userId);
+  if(!user) return response.status(400).json({
+    error: 'Invalid user'
+  });
+  const blog = new Blog({
+    title, url, author, likes,
+    user: user._id
+  });
+
+  try {
+    const savedBlog = await blog.save();
+    user.blogs = user.blogs.concat(savedBlog._id);
+    await user.save();
+    response.status(201).json(savedBlog);
+  } catch(e) {
+    next(e);
+  }
 });
 
 blogsRouter.put('/:id', async (request, response) => {
@@ -40,6 +46,15 @@ blogsRouter.put('/:id', async (request, response) => {
     );
     if(!result) response.status(404).end();
     response.json(result.toJSON());
+  } catch(e) {
+    response.status(400).end();
+  }
+});
+
+blogsRouter.delete('/:id', async (request, response) => {
+  try {
+    const result = await Blog.findByIdAndRemove(request.params.id);
+    response.status(result ? 204 : 404).end();
   } catch(e) {
     response.status(400).end();
   }
