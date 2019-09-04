@@ -1,0 +1,15 @@
+@apiUrl = http://localhost:3001/api
+
+###
+
+# @name login
+POST {{apiUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "lubr",
+  "password": "Yawnyawn"
+}
+
+
+
