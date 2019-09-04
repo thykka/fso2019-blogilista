@@ -3,6 +3,7 @@ const supertest = require('supertest');
 const app = require('../app');
 const Blog = require('../models/blog');
 const User = require('../models/user');
+const jwt = require('jsonwebtoken');
 
 const api = supertest(app);
 
@@ -43,6 +44,17 @@ const existingUserId = async () => {
   const users = await User.find({});
   if(users.length > 0) return users[0]._id;
   return false;
+};
+
+const getLoginToken = async () => {
+  const user = await User.find({});
+  if(user.length > 0) {
+    return jwt.sign({
+      username: user[0].username,
+      id: user[0]._id
+    }, process.env.SECRET);
+  }
+  return null;
 };
 
 const blogsInDb = async () => {
@@ -94,15 +106,15 @@ describe('GET /api/blogs', () => {
 
 describe('POST /api/blogs', () => {
   test('response is in JSON', async () => {
-    const userId = await existingUserId();
+    const token = await getLoginToken();
     const result = await api.post('/api/blogs')
       .send({
         title: 'Hype wars',
         author: 'Gobert M. Cartin\'',
         url: 'http://example.com',
-        likes: 9,
-        userId
+        likes: 9
       })
+      .set('Authorization', 'bearer ' + token)
       .set('Accept', 'application/json');
 
     expect(result.status).toBe(201);
@@ -111,15 +123,15 @@ describe('POST /api/blogs', () => {
   });
 
   test('new blog increases the amount of blogs in the list', async () => {
-    const userId = await existingUserId();
+    const token = await getLoginToken();
     await api.post('/api/blogs')
       .send({
         title: 'Just another blog',
         author: 'Just another blogger',
         url: 'http://justanotherurl.com',
-        likes: 0,
-        userId
+        likes: 0
       })
+      .set('Authorization', 'bearer ' + token)
       .set('Accept', 'application/json');
 
     const result = await api.get('/api/blogs');
@@ -127,16 +139,16 @@ describe('POST /api/blogs', () => {
   });
 
   test('the response matches the new blog object', async () => {
-    const userId = await existingUserId();
+    const token = await getLoginToken();
     const sentBlog = {
       title: 'A match made in heaven',
       author: 'Rex Egg',
       url: 'https://regexr.com',
-      likes: 9001,
-      userId
+      likes: 9001
     };
     const result = await api.post('/api/blogs')
       .send(sentBlog)
+      .set('Authorization', 'bearer ' + token)
       .set('Accept', 'application/json');
 
     const receivedBlog = result.body;
@@ -147,27 +159,27 @@ describe('POST /api/blogs', () => {
   });
 
   test('if the new blog doesn\'t define likes, the initial likes should be 0', async() => {
-    const userId = await existingUserId();
+    const token = await getLoginToken();
     const result = await api.post('/api/blogs')
       .send({
         title: 'I was made for liking you, baby',
         author: 'NaN Jon Bovi',
-        url: 'http://example.com',
-        userId
+        url: 'http://example.com'
       })
+      .set('Authorization', 'bearer ' + token)
       .set('Accept', 'application/json');
 
     expect(result.body.likes).toBe(0);
   });
 
   test('if no title or url defined, the response status is 400', async () => {
-    const userId = await existingUserId();
+    const token = await getLoginToken();
     const result = await api.post('/api/blogs')
       .send({
         author: 'Under construction',
-        likes: 5,
-        userId
+        likes: 5
       })
+      .set('Authorization', 'bearer ' + token)
       .set('Accept', 'application/json');
 
     expect(result.status).toBe(400);
