@@ -1,6 +1,15 @@
 const blogsRouter = require('express').Router();
 const Blog = require('../models/blog');
 const User = require('../models/user');
+const jwt = require('jsonwebtoken');
+
+const getTokenFrom = req => {
+  const authorization = req.get('authorization');
+  if(authorization && authorization.toLowerCase().startsWith('bearer ')) {
+    return authorization.substring(7);
+  }
+  return null;
+};
 
 blogsRouter.get('/', async (_, response) => {
   const blogs = await Blog.find({}).populate('user');
@@ -8,22 +17,34 @@ blogsRouter.get('/', async (_, response) => {
 });
 
 blogsRouter.post('/', async (request, response, next) => {
-  const { title, url, author, userId, likes } = request.body;
-  if(!title || !url) {
-    return response.status(400).json({
-      error: 'Must have \'title\' and \'url\''
-    });
-  }
-  const user = await User.findById(userId);
-  if(!user) return response.status(400).json({
-    error: 'Invalid user'
-  });
-  const blog = new Blog({
-    title, url, author, likes,
-    user: user._id
-  });
+  const { title, url, author, likes } = request.body;
+  const { token } = request;
+
+  let user = false;
 
   try {
+    const decodedToken = jwt.verify(token, process.env.SECRET);
+    if(!token || !decodedToken.id) {
+      return response.status(401).json({ error: 'invalid/missing token' });
+    }
+
+    if(!title || !url) {
+      return response.status(400).json({
+        error: 'Must have \'title\' and \'url\''
+      });
+    }
+
+    user = await User.findById(decodedToken.id);
+
+    if(!user) return response.status(400).json({
+      error: 'Invalid user'
+    });
+
+    const blog = new Blog({
+      title, url, author, likes,
+      user: user._id
+    });
+
     const savedBlog = await blog.save();
     user.blogs = user.blogs.concat(savedBlog._id);
     await user.save();
