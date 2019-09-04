@@ -105,6 +105,19 @@ describe('GET /api/blogs', () => {
 });
 
 describe('POST /api/blogs', () => {
+  test('fails with 400 if no token provided', async () => {
+    const result = await api.post('/api/blogs')
+      .send({
+        title: 'Will not get added to the list',
+        author: 'Epic test guy',
+        url: 'http://example.com',
+        likes: -1
+      })
+      .set('Accept', 'application/json');
+
+    expect(result.status).toBe(400);
+  });
+
   test('response is in JSON', async () => {
     const token = await getLoginToken();
     const result = await api.post('/api/blogs')
