@@ -41,7 +41,7 @@ const nonExistingId = async () => {
 };
 
 const existingUserId = async () => {
-  const users = await User.find({});
+  const users = await User.find({ username: 'tester' });
   if(users.length > 0) return users[0]._id;
   return false;
 };
@@ -67,13 +67,21 @@ beforeEach(async () => {
   let userObject = new User(initialUsers[0]);
   await userObject.save();
 
+  const userId = await existingUserId();
+
   await Blog.deleteMany({});
 
-  let blogObject = new Blog(initialBlogs[0]);
-  await blogObject.save();
+  const resultIds = [];
+  let blogObject = new Blog(Object.assign(initialBlogs[0], { user: userId }));
+  let result = await blogObject.save();
+  resultIds.push(result._id);
 
-  blogObject = new Blog(initialBlogs[1]);
-  await blogObject.save();
+  blogObject = new Blog(Object.assign(initialBlogs[1], { user: userId }));
+  result = await blogObject.save();
+  resultIds.push(result._id);
+
+  userObject.blogs = resultIds;
+  await userObject.save();
 });
 
 describe('GET /api/blogs', () => {
@@ -127,7 +135,7 @@ describe('POST /api/blogs', () => {
         url: 'http://example.com',
         likes: 9
       })
-      .set('Authorization', 'bearer ' + token)
+      .set('authorization', 'bearer ' + token)
       .set('Accept', 'application/json');
 
     expect(result.status).toBe(201);
@@ -144,7 +152,7 @@ describe('POST /api/blogs', () => {
         url: 'http://justanotherurl.com',
         likes: 0
       })
-      .set('Authorization', 'bearer ' + token)
+      .set('authorization', 'bearer ' + token)
       .set('Accept', 'application/json');
 
     const result = await api.get('/api/blogs');
@@ -161,7 +169,7 @@ describe('POST /api/blogs', () => {
     };
     const result = await api.post('/api/blogs')
       .send(sentBlog)
-      .set('Authorization', 'bearer ' + token)
+      .set('authorization', 'bearer ' + token)
       .set('Accept', 'application/json');
 
     const receivedBlog = result.body;
@@ -179,7 +187,7 @@ describe('POST /api/blogs', () => {
         author: 'NaN Jon Bovi',
         url: 'http://example.com'
       })
-      .set('Authorization', 'bearer ' + token)
+      .set('authorization', 'bearer ' + token)
       .set('Accept', 'application/json');
 
     expect(result.body.likes).toBe(0);
@@ -192,18 +200,29 @@ describe('POST /api/blogs', () => {
         author: 'Under construction',
         likes: 5
       })
-      .set('Authorization', 'bearer ' + token)
+      .set('authorization', 'bearer ' + token)
       .set('Accept', 'application/json');
 
     expect(result.status).toBe(400);
   });
 });
 
-describe('DELETE /api/posts/:id', () => {
-  test('response status is 204', async () => {
+describe('DELETE /api/blogs/:id', () => {
+  test('fails with 400 if no token provided', async () => {
     const listResponse = await api.get('/api/blogs');
     const { id } = listResponse.body[0];
     const result = await api.delete('/api/blogs/' + id);
+
+    expect(result.status).toBe(400);
+  });
+
+  test('response status is 204', async () => {
+    const listResponse = await api.get('/api/blogs');
+    const { id } = listResponse.body[0];
+    const token = await getLoginToken();
+
+    const result = await api.delete('/api/blogs/' + id)
+      .set('authorization', 'bearer ' + token);
 
     expect(result.status).toBe(204);
   });
@@ -213,7 +232,9 @@ describe('DELETE /api/posts/:id', () => {
     const { id } = listResponse.body[0];
     const blogsLength = listResponse.body.length;
 
-    await api.delete('/api/blogs/' + id);
+    const token = await getLoginToken();
+    await api.delete('/api/blogs/' + id)
+      .set('authorization', 'bearer ' + token);
 
     const result = await api.get('/api/blogs');
 
@@ -221,13 +242,17 @@ describe('DELETE /api/posts/:id', () => {
   });
 
   test('if invalid id is provided, response status is 400', async () => {
-    const result = await api.delete('/api/blogs/foobar');
+    const token = await getLoginToken();
+    const result = await api.delete('/api/blogs/foobar')
+      .set('authorization', 'bearer ' + token);
     expect(result.status).toBe(400);
   });
 
   test('if expired id is provided, response status is 404', async () => {
+    const token = await getLoginToken();
     const id = await nonExistingId();
-    const result = await api.delete('/api/blogs/' + id);
+    const result = await api.delete('/api/blogs/' + id)
+      .set('authorization', 'bearer ' + token);
     expect(result.status).toBe(404);
   });
 });
