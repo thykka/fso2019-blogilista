@@ -74,8 +74,41 @@ blogsRouter.put('/:id', async (request, response) => {
 
 blogsRouter.delete('/:id', async (request, response) => {
   try {
-    const result = await Blog.findByIdAndRemove(request.params.id);
-    response.status(result ? 204 : 404).end();
+    // verify token
+    const { token } = request;
+    const decodedToken = jwt.verify(token, process.env.SECRET);
+    if(!token || !decodedToken.id) {
+      return response.status(401).json({ error: 'invalid/missing token' });
+    }
+
+    // get current user
+    const user = await User.findById(decodedToken.id);
+    if(!user) {
+      console.log(`No user for decodedToken ${ decodedToken.id }`);
+      return response.status(400).json({ error: 'Invalid user' });
+    }
+
+    const blogItem = await Blog.findById(request.params.id);
+
+    if(!blogItem) {
+      console.log(`no blog item found with id ${request.params.id}`);
+      response.status(404).end();
+    }
+
+    if(blogItem.user.toString() !== user._id.toString()) {
+      console.log(`Access denied for user ${user._id}<${typeof user._id}> > ${blogItem.user}<${typeof blogItem.user}>`);
+      response.status(403).json({ error: 'Access denied' });
+    }
+
+    // Remove the blog item itself
+    const removedBlog = await Blog.findByIdAndRemove(request.params.id);
+
+    // Remove blog reference from user
+    if(removedBlog) {
+      user.blogs = user.blogs.filter(blog => blog !== blogItem._id);
+      await user.save();
+    }
+    response.status(removedBlog ? 204 : 404).end();
   } catch(e) {
     response.status(400).end();
   }
