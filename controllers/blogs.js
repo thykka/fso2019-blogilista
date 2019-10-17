@@ -3,17 +3,48 @@ const Blog = require('../models/blog');
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 
-const getTokenFrom = req => {
-  const authorization = req.get('authorization');
-  if(authorization && authorization.toLowerCase().startsWith('bearer ')) {
-    return authorization.substring(7);
-  }
-  return null;
-};
-
 blogsRouter.get('/', async (_, response) => {
   const blogs = await Blog.find({}).populate('user');
   response.json(blogs.map(blog => blog.toJSON()));
+});
+
+blogsRouter.get('/:id', async (request, response, next) => {
+  const { id } = request.params;
+  try {
+    const blog = await Blog.findById(id).populate('user');
+    if(blog) {
+      response.json(blog.toJSON());
+      return;
+    } else {
+      response.status(404).json({
+        error: 'No blog found with id ' + id
+      });
+    }
+  } catch(e) {
+    next(e);
+  }
+});
+
+blogsRouter.post('/like/:id', async (request, response, next) => {
+  const { id } = request.params;
+  try {
+    const blog = await Blog.findById(id);
+    if(!blog) {
+      response.status(404).json({
+        error: 'No blog found with id ' + id
+      });
+      return;
+    }
+    const currentLikes = blog.likes;
+
+    const updatedBlog = await Blog.findByIdAndUpdate(id, {
+      likes: currentLikes + 1
+    });
+    response.json(updatedBlog.toJSON());
+
+  } catch(e) {
+    next(e);
+  }
 });
 
 blogsRouter.post('/', async (request, response, next) => {
@@ -72,10 +103,13 @@ blogsRouter.put('/:id', async (request, response) => {
   }
 });
 
-blogsRouter.delete('/:id', async (request, response) => {
+blogsRouter.delete('/:id', async (request, response, next) => {
+  const { id } = request.params;
+  console.log('about to delete ' + id);
   try {
     // verify token
     const { token } = request;
+
     const decodedToken = jwt.verify(token, process.env.SECRET);
     if(!token || !decodedToken.id) {
       return response.status(401).json({ error: 'invalid/missing token' });
@@ -88,17 +122,19 @@ blogsRouter.delete('/:id', async (request, response) => {
       return response.status(400).json({ error: 'Invalid user' });
     }
 
-    const blogItem = await Blog.findById(request.params.id);
+    const blogItem = await Blog.findById(id);
 
     if(!blogItem) {
-      console.log(`no blog item found with id ${request.params.id}`);
+      console.log(`no blog item found with id ${id}`);
       response.status(404).end();
     }
-
+    // Allow deleting other people's blogs, for now..
+    /*
     if(blogItem.user.toString() !== user._id.toString()) {
       console.log(`Access denied for user ${user._id}<${typeof user._id}> > ${blogItem.user}<${typeof blogItem.user}>`);
       response.status(403).json({ error: 'Access denied' });
     }
+    */
 
     // Remove the blog item itself
     const removedBlog = await Blog.findByIdAndRemove(request.params.id);
@@ -110,7 +146,8 @@ blogsRouter.delete('/:id', async (request, response) => {
     }
     response.status(removedBlog ? 204 : 404).end();
   } catch(e) {
-    response.status(400).end();
+    next(e);
+    //response.status(400).end();
   }
 });
 

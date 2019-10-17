@@ -18,5 +18,14 @@ Content-Type: application/json
   "likes": 2
 }
 
+###
 
+# @name getBlog
+@blogId = {{getBlogs.response.body.0.id}}
+PUT {{apiUrl}}/blogs/{{blogId}}
 
+###
+
+# @name likeBlog
+@blogId = {{getBlogs.response.body.0.id}}
+POST {{apiUrl}}/blogs/like/{{blogId}}
