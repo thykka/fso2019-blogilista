@@ -35,11 +35,10 @@ blogsRouter.post('/like/:id', async (request, response, next) => {
       });
       return;
     }
-    const currentLikes = blog.likes;
-
+    const currentLikes = blog.likes || 0;
     const updatedBlog = await Blog.findByIdAndUpdate(id, {
       likes: currentLikes + 1
-    });
+    }, { 'new': true });
     response.json(updatedBlog.toJSON());
 
   } catch(e) {
@@ -79,7 +78,12 @@ blogsRouter.post('/', async (request, response, next) => {
     const savedBlog = await blog.save();
     user.blogs = user.blogs.concat(savedBlog._id);
     await user.save();
-    response.status(201).json(savedBlog);
+
+    // TODO: Maybe it's possible to populate without
+    // fetching new data in an extra call?
+    const populatedBlog = await Blog.findById(savedBlog._id).populate('user');
+    response.status(201).json(populatedBlog);
+
   } catch(e) {
     next(e);
   }
