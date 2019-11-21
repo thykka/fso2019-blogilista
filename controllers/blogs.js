@@ -1,17 +1,18 @@
 const blogsRouter = require('express').Router();
 const Blog = require('../models/blog');
 const User = require('../models/user');
+const Comment = require('../models/comment');
 const jwt = require('jsonwebtoken');
 
 blogsRouter.get('/', async (_, response) => {
-  const blogs = await Blog.find({}).populate('user');
+  const blogs = await Blog.find({}).populate(['user', 'comments']);
   response.json(blogs.map(blog => blog.toJSON()));
 });
 
 blogsRouter.get('/:id', async (request, response, next) => {
   const { id } = request.params;
   try {
-    const blog = await Blog.findById(id).populate('user');
+    const blog = await Blog.findById(id).populate(['user', 'comments']);
     if(blog) {
       response.json(blog.toJSON());
       return;
@@ -81,7 +82,7 @@ blogsRouter.post('/', async (request, response, next) => {
 
     // TODO: Maybe it's possible to populate without
     // fetching new data in an extra call?
-    const populatedBlog = await Blog.findById(savedBlog._id).populate('user');
+    const populatedBlog = await Blog.findById(savedBlog._id).populate(['user', 'comments']);
     response.status(201).json(populatedBlog);
 
   } catch(e) {
@@ -132,13 +133,6 @@ blogsRouter.delete('/:id', async (request, response, next) => {
       console.log(`no blog item found with id ${id}`);
       response.status(404).end();
     }
-    // Allow deleting other people's blogs, for now..
-    /*
-    if(blogItem.user.toString() !== user._id.toString()) {
-      console.log(`Access denied for user ${user._id}<${typeof user._id}> > ${blogItem.user}<${typeof blogItem.user}>`);
-      response.status(403).json({ error: 'Access denied' });
-    }
-    */
 
     // Remove the blog item itself
     const removedBlog = await Blog.findByIdAndRemove(request.params.id);
@@ -151,7 +145,50 @@ blogsRouter.delete('/:id', async (request, response, next) => {
     response.status(removedBlog ? 204 : 404).end();
   } catch(e) {
     next(e);
-    //response.status(400).end();
+  }
+});
+
+blogsRouter.get('/:id/comments', async (request, response, next) => {
+  const { id } = request.params;
+  try {
+    const blog = await Blog.findById(id).populate(['user', 'comments']);
+    if(!blog) {
+      response.status(404).json({ error: 'No blog found with id ' + id });
+      return;
+    } else {
+      response.json(blog.toJSON().comments);
+    }
+  } catch(e) {
+    next(e);
+  }
+});
+
+blogsRouter.post('/:id/comments', async (request, response, next) => {
+  const blogId = request.params.id;
+  const { message } = request.body;
+  try {
+    const blog = await Blog.findById(blogId);
+    if(!blog) {
+      response.status(404).json({
+        error: 'No blog found with id ' + blogId
+      });
+      return;
+    } else {
+      const comment = new Comment({
+        message,
+        blog: blogId
+      });
+
+      const savedComment = await comment.save();
+      console.log('saved comment with id ' + savedComment._id);
+      blog.comments = blog.comments.concat(savedComment._id);
+      await blog.save();
+
+      const populatedBlog = await Blog.findById(blogId).populate(['user', 'comments']);
+      response.status(201).json(populatedBlog);
+    }
+  } catch(e) {
+    next(e);
   }
 });
 

@@ -1,0 +1,23 @@
+@apiUrl = http://localhost:3001/api
+
+###
+
+# @name getBlogs
+GET {{apiUrl}}/blogs
+
+###
+
+# @name getComments
+@blogId = {{getBlogs.response.body.0.id}}
+GET {{apiUrl}}/blogs/{{blogId}}/comments
+
+###
+
+# @name addComment
+@blogId = {{getBlogs.response.body.0.id}}
+POST {{apiUrl}}/blogs/{{blogId}}/comments
+Content-Type: application/json
+
+{
+  "message": "Another great article!"
+}
