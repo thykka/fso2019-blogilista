@@ -1,0 +1,6 @@
+@apiUrl = http://localhost:3001/api/testing
+
+### Only works when in testing mode
+
+# @name reset
+POST {{apiUrl}}/reset

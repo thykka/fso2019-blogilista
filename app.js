@@ -24,6 +24,12 @@ app.use('/api/login', loginRouter);
 app.use('/api/blogs', blogsRouter);
 app.use('/api/users', usersRouter);
 
+if(config.TESTING) {
+  const testingRouter = require('./controllers/testing');
+  app.use('/api/testing', testingRouter);
+  console.log('Testing mode enabled. /reset endpoint active');
+}
+
 const errorHandler = (error, _, res, next) => {
   if(error.name === 'ValidationError') {
     return res.status(400).json({ error: error.message });

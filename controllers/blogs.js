@@ -166,6 +166,12 @@ blogsRouter.get('/:id/comments', async (request, response, next) => {
 blogsRouter.post('/:id/comments', async (request, response, next) => {
   const blogId = request.params.id;
   const { message } = request.body;
+  if(typeof message !== 'string' || message.length === 0) {
+    response.status(400).json({
+      error: 'Comment message missing or malformed'
+    });
+    return;
+  }
   try {
     const blog = await Blog.findById(blogId);
     if(!blog) {
@@ -180,7 +186,7 @@ blogsRouter.post('/:id/comments', async (request, response, next) => {
       });
 
       const savedComment = await comment.save();
-      console.log('saved comment with id ' + savedComment._id);
+      console.log(`New Comment "${ message }" (${ savedComment._id })`);
       blog.comments = blog.comments.concat(savedComment._id);
       await blog.save();
 
